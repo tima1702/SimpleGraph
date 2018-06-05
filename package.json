@@ -1,0 +1,22 @@
+{
+  "name": "simple-graph",
+  "version": "1.0.0",
+  "description": "Labs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tima1702/simple-graph.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tima1702/simple-graph/issues"
+  },
+  "homepage": "https://github.com/tima1702/simple-graph#readme",
+  "dependencies": {
+    "underscore": "^1.9.1"
+  }
+}
