@@ -27,7 +27,7 @@ const createAdjacencyList = (content) => {
       adjacencyList.get(+a).push(+b);
       if (a !== b) {
         // при необходимости раскоментировать
-        // adjacencyList.get(+b).push(+a);
+        adjacencyList.get(+b).push(+a);
       }
     }
   });
@@ -54,7 +54,7 @@ const stringToAdjacencyMatrix = (context) => {
   const count = context.split('\n')[0];
   const adjacencyMatrix = createEmptyMatrix(count, count);
 
-  this.context.split('\n').forEach((row) => {
+  context.trim().split('\n').forEach((row) => {
     const [a, b] = row.split(/\s/);
 
     if (a && b) {
