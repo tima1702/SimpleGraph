@@ -176,8 +176,98 @@ const findComponentOfTheTransformedGraph = (context) => {
   return result;
 };
 
+const colors = [
+  '#FF0000',
+  '#7CFC00',
+  '#00FA9A',
+  '#006400',
+  '#FF1493',
+  '#FF4500',
+  '#FFFF00',
+  '#00FFFF',
+  '#4682B4',
+  '#EE82EE',
+  '#000080',
+  '#4B0082',
+  '#000000',
+  '#ffffff',
+  '#8B4513',
+  '#556B2F',
+];
+
+// context - содержимое файла
+// Вершинная раскраска и хроматическое число для графа в 16-ти цветовой палитре
+// возвращяет хроматическое число и Map где key - вершина, value - цвет вершины
+const colorNodesAndChrome = (context) => {
+  const resultColoring = new Map();
+  let ghrome = 0;
+  createAdjacencyList(context).forEach((items, index) => {
+    let colorIndex = 0;
+    items.forEach(item => {
+      if (resultColoring.get(item) && colors.findIndex(c => c === resultColoring.get(item)) === colorIndex) {
+        colorIndex += 1;
+      }
+    });
+    ghrome = colorIndex > ghrome ? ghrome = colorIndex : ghrome;
+    resultColoring.set(index, colors[colorIndex]);
+  });
+  return {result: resultColoring, ghrome: ghrome + 1}; // т.к. индекс
+};
+
+// context - содержимое файла
+// Реберная раскраска и хроматический индекс для графа в 16-ти цветовой палитре
+// возвращяет хроматическое число и Map где key - ребро, value - цвет ребра
+const colorEdgesAndChrome = (context) => {
+  const resultColoring = new Map();
+  const list = createAdjacencyList(context);
+  let ghrome = 0;
+  createAdjacencyList(context).forEach((items, index) => {
+    items.forEach(item => {
+      if (!resultColoring.get(`${item}-${index}`)) {
+        let listNames = [];
+        // собираем возможные вариации названий ребер двух вершин
+        if (list.get(item)) {
+          const eges = [...list.get(item).map(i => {
+            return `${item}-${i}`;
+          }), ...list.get(item).map(i => {
+            return `${i}-${item}`;
+          })];
+          listNames = [...eges, ...listNames];
+        }
+        if (list.get(index)) {
+          const eges = [...list.get(index).map(i => {
+            return `${index}-${i}`;
+          }), ...list.get(index).map(i => {
+            return `${i}-${index}`;
+          })];
+          listNames = [...eges, ...listNames];
+        }
+        let colorIndex = 0;
+        let isTrue = true, massColorsIndexEdges = [];
+        // собираем существующие цвета смежных ребер
+        listNames.forEach(lItem => {
+          if (resultColoring.get(lItem)) {
+            massColorsIndexEdges.push(colors.findIndex(c => c === resultColoring.get(lItem)));
+          }
+        });
+        // проверяем до тех пор пока не будет уникального цвета среди смежных ребер
+        do {
+          if (massColorsIndexEdges.findIndex(c => c === colorIndex) !== -1) {
+            colorIndex += 1;
+          } else {
+            isTrue = false;
+          }
+        } while (isTrue);
+        ghrome = colorIndex > ghrome ? ghrome = colorIndex : ghrome;
+        resultColoring.set(`${index}-${item}`, colors[colorIndex]);
+      }
+    });
+  });
+  return {result: resultColoring, ghrome: ghrome + 1}; // т.к. индекс
+};
+
 export {
-  createAdjacencyList,
+  // createAdjacencyList,
   stringToAdjacencyMatrix,
   getDegreesOfVertices,
   getIsolatedVertices,
@@ -186,4 +276,6 @@ export {
   getMultipleVerges,
   graphToSimpleForm,
   findComponentOfTheTransformedGraph,
+  colorNodesAndChrome,
+  colorEdgesAndChrome,
 };
