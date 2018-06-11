@@ -1,4 +1,4 @@
-const _ = require('underscore');
+// const _ = require('underscore');
 
 const createEmptyMap = (count) => {
   const result = new Map();
@@ -266,16 +266,252 @@ const colorEdgesAndChrome = (context) => {
   return {result: resultColoring, ghrome: ghrome + 1}; // т.к. индекс
 };
 
-export {
-  // createAdjacencyList,
-  stringToAdjacencyMatrix,
-  getDegreesOfVertices,
-  getIsolatedVertices,
-  getPendantVertices,
-  getLoops,
-  getMultipleVerges,
-  graphToSimpleForm,
-  findComponentOfTheTransformedGraph,
-  colorNodesAndChrome,
-  colorEdgesAndChrome,
+// context - содержимое файла
+// Получаем закрытый(замкнутый) маршрут, startNode - начальная вершина
+// возвращяет закрытый(замкнутый) маршрут по вершинам
+const closeRoute = (context, startNode) => {
+  const resultRoute = [];
+  const list = new Map(createAdjacencyList(context));
+  let inFunction = false;
+  resultRoute.push(startNode);
+  function nextEpisode(itemsNext, goBack, lastIndex) {
+    const index = Math.floor(Math.random() * itemsNext.length);
+    const newItems = [...list.get(itemsNext[index])];
+    if (resultRoute.length === 1 && resultRoute[0] === itemsNext[index]) {
+      nextEpisode(itemsNext, false, lastIndex);
+    }
+      newItems.splice(newItems.indexOf(inFunction ? lastIndex : startNode), 1);
+    inFunction = true;
+    if (newItems.length) {
+        resultRoute.push(itemsNext[index]);
+      if (resultRoute.length > 1 && resultRoute[0] === resultRoute[resultRoute.length - 1]) {
+        return resultRoute;
+      }
+      nextEpisode(newItems, false, itemsNext[index]);
+    } else {
+      if (!goBack) {
+        resultRoute.push(itemsNext[index]);
+      }
+      resultRoute.splice(resultRoute.length / 2 ^ 0, resultRoute.length - (resultRoute.length / 2 ^ 0));
+      nextEpisode(new Map(createAdjacencyList(context)).get(resultRoute[resultRoute.length - 1]), true);
+    }
+  }
+  if (!inFunction) {
+    nextEpisode(list.get(startNode));
+  }
+  return resultRoute;
 };
+
+// context - содержимое файла
+// Получаем открытый маршрут, startNode - начальная вершина
+// возвращяет открытый маршрут по вершинам
+const openRoute = (context, startNode, approximateQuantity) => {
+  const resultRoute = [];
+  const list = createAdjacencyList(context);
+  let inFunction = false;
+  resultRoute.push(startNode);
+  function nextEpisode(itemsNext, goBack, lastIndex) {
+    const index = Math.floor(Math.random() * itemsNext.length);
+    const newItems = [...list.get(itemsNext[index])];
+    if (!goBack) {
+      newItems.splice(newItems.indexOf(inFunction ? lastIndex : startNode), 1);
+    }
+    inFunction = true;
+    if (newItems.length) {
+      if (!goBack) {
+        resultRoute.push(itemsNext[index]);
+      }
+      if (resultRoute.length >= approximateQuantity && resultRoute[0] !== resultRoute[resultRoute.length - 1]) {
+        return resultRoute;
+      }
+      nextEpisode(newItems, false, itemsNext[index]);
+    } else {
+      if (!goBack) {
+        resultRoute.push(itemsNext[index]);
+      }
+      if (itemsNext[index] === resultRoute[0]) {
+        nextEpisode(itemsNext.splice(itemsNext.indexOf(itemsNext[index], 1)), true);
+      } else {
+        return resultRoute;
+      }
+    }
+  }
+  if (!inFunction) {
+    nextEpisode(list.get(startNode));
+  }
+  return resultRoute;
+};
+
+// context - содержимое файла
+// Получаем цепь, startNode - начальная вершина
+// возвращяет цепь
+const getTrail = (context, startNode, approximateQuantity) => {
+  const resultRoute = [];
+  const list = createAdjacencyList(context);
+  let inFunction = false;
+  resultRoute.push(startNode);
+  function nextEpisode(itemsNext, goBack, lastIndex) {
+    const index = Math.floor(Math.random() * itemsNext.length),
+    lItem = itemsNext[index];
+    const newItems = list.get(itemsNext[index]);
+    newItems.splice(newItems.indexOf(inFunction ? lastIndex : startNode), 1);
+    itemsNext.splice(index, 1);
+    inFunction = true;
+    if (newItems.length) {
+      resultRoute.push(lItem);
+      if (resultRoute.length === approximateQuantity) {
+        return resultRoute;
+      }
+      nextEpisode(newItems, false, lItem);
+    } else {
+      return resultRoute;
+    }
+  }
+  if (!inFunction) {
+    nextEpisode(list.get(startNode));
+  }
+  return resultRoute;
+};
+
+// context - содержимое файла
+// Получаем путь, startNode - начальная вершина
+// возвращяет путь
+const getWay = (context, startNode, approximateQuantity) => {
+  const resultRoute = [];
+  const list = createAdjacencyList(context);
+  let inFunction = false;
+  resultRoute.push(startNode);
+  function nextEpisode(itemsNext, goBack, lastIndex) {
+    const index = Math.floor(Math.random() * itemsNext.length),
+      lItem = itemsNext[index];
+    if (resultRoute.indexOf(lItem) !== -1) {
+      itemsNext.splice(index, 1);
+      if (itemsNext.length) {
+        nextEpisode(itemsNext, false, lastIndex);
+      }
+      return resultRoute;
+    }
+    const newItems = list.get(itemsNext[index]);
+    newItems.splice(newItems.indexOf(inFunction ? lastIndex : startNode), 1);
+    itemsNext.splice(index, 1);
+    inFunction = true;
+    if (newItems.length) {
+      resultRoute.push(lItem);
+      if (resultRoute.length === approximateQuantity) {
+        return resultRoute;
+      }
+      nextEpisode(newItems, false, lItem);
+    } else {
+      return resultRoute;
+    }
+  }
+  if (!inFunction) {
+    nextEpisode(list.get(startNode));
+  }
+  return resultRoute;
+};
+
+// context - содержимое файла
+// Получаем контур, startNode - начальная вершина
+// возвращяет контур
+const getCircuit = (context, startNode) => {
+  let resultRoute = [];
+  let list = createAdjacencyList(context);
+  let inFunction = false;
+  resultRoute.push(startNode);
+  function nextEpisode(itemsNext, goBack, lastIndex) {
+    const index = Math.floor(Math.random() * itemsNext.length),
+      lItem = itemsNext[index];
+    const newItems = list.get(itemsNext[index]);
+    newItems.splice(newItems.indexOf(inFunction ? lastIndex : startNode), 1);
+    itemsNext.splice(index, 1);
+    inFunction = true;
+    if (newItems.length) {
+      resultRoute.push(lItem);
+      if (resultRoute[0] === lItem && resultRoute.length > 3) {
+        return resultRoute;
+      }
+      nextEpisode(newItems, false, lItem);
+    } else {
+      if (resultRoute[0] === lItem) {
+        resultRoute.push(lItem);
+        return resultRoute;
+      } else {
+        resultRoute = [startNode];
+        // темное колдунство
+        list = new Map([...createAdjacencyList(context)]);
+        nextEpisode(list.get(startNode), false, startNode);
+      }
+    }
+  }
+  if (!inFunction && list.size > 2) {
+    nextEpisode(list.get(startNode));
+  }
+  return resultRoute;
+};
+
+// context - содержимое файла
+// Получаем контур, startNode - начальная вершина
+// возвращяет контур
+const getEasyCycle = (context, startNode) => {
+  let resultRoute = [];
+  let list = createAdjacencyList(context);
+  let inFunction = false;
+  resultRoute.push(startNode);
+  function nextEpisode(itemsNext, goBack, lastIndex) {
+    const index = Math.floor(Math.random() * itemsNext.length),
+      lItem = itemsNext[index];
+    if (resultRoute.indexOf(lItem) !== -1) {
+      console.log(index, lItem, itemsNext, resultRoute);
+      itemsNext.splice(index, 1);
+      if (itemsNext.length) {
+        nextEpisode(itemsNext, false, lastIndex);
+      } else {
+        console.log('reset');
+        resultRoute = [startNode];
+        // темное колдунство
+        list = new Map([...createAdjacencyList(context)]);
+        nextEpisode(list.get(startNode), false, startNode);
+      }
+    }
+    const newItems = list.get(itemsNext[index]);
+    newItems.splice(newItems.indexOf(inFunction ? lastIndex : startNode), 1);
+    itemsNext.splice(index, 1);
+    inFunction = true;
+    if (newItems.length) {
+      resultRoute.push(lItem);
+      if (resultRoute[0] === lItem && resultRoute.length > 3) {
+        return resultRoute;
+      }
+      nextEpisode(newItems, false, lItem);
+    } else {
+      if (resultRoute[0] === lItem) {
+        resultRoute.push(lItem);
+        return resultRoute;
+      } else {
+        resultRoute = [startNode];
+        // темное колдунство
+        list = new Map([...createAdjacencyList(context)]);
+        nextEpisode(list.get(startNode), false, startNode);
+      }
+    }
+  }
+  if (!inFunction && list.size > 2) {
+    nextEpisode(list.get(startNode));
+  }
+  return resultRoute;
+};
+
+// export {
+//   // createAdjacencyList,
+//   stringToAdjacencyMatrix,
+//   getDegreesOfVertices,
+//   getIsolatedVertices,
+//   getPendantVertices,
+//   getLoops,
+//   getMultipleVerges,
+//   graphToSimpleForm,
+//   findComponentOfTheTransformedGraph,
+//   colorNodesAndChrome,
+//   colorEdgesAndChrome,
+// };
